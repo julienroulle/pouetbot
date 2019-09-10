@@ -63,7 +63,7 @@ async def submit_song(ctx, url: str):
     
     tmp = await ctx.send(response)
 
-    res.update({tmp.id: {
+    res.update({str(tmp.id): {
         'url': url,
         'submittedBy': str(ctx.message.author),
         'marks': {}
