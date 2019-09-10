@@ -83,10 +83,26 @@ async def result(ctx, top: int=5):
         
         if tmp != []:
             tmp = np.array(tmp)
-            df = df.append(pd.Series([res[key]['url'][12:], res[key]['submittedBy'], len(tmp), tmp.mean()], index=clm), ignore_index=True)
+            df = df.append(pd.Series([res[key]['url'].split('//')[1], res[key]['submittedBy'], len(tmp), tmp.mean()], index=clm), ignore_index=True)
 
     response = df.set_index('Url').sort_values('Score', ascending=False).head(top)
     response = '```{}```'.format(response)
+    await ctx.send(response)
+
+@bot.command(name='stats', help='Get stats', pass_context=True)
+async def stats(ctx, top: int=5):
+    df = pd.DataFrame()
+
+    for key in res.keys():
+        tmp = pd.Series(res[key]['marks'])
+        tmp['submittedBy'] = res[key]['submittedBy']
+        df = df.append(tmp, ignore_index=True)
+
+    nb_videos = df['submittedBy'].value_counts().sort_values(ascending=False).head(top)
+    marks_given = df.mean().sort_values(ascending=False).head(top)
+    marks_received = (df.groupby('submittedBy').sum().sum(axis=1) / df.groupby('submittedBy').count().sum(axis=1)).sort_values(ascending=False).head(top)
+
+    response = '```Nombre de vidéos postées:\n{}\n\nMoyenne des notes données:\n{}\n\nMoyenne des notes reçues:\n{}```'.format(nb_videos, marks_given, marks_received)
     await ctx.send(response)
 
 @bot.event
