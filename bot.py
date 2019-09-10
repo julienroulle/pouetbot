@@ -73,4 +73,14 @@ async def on_reaction_add(reaction, user):
     with open('results.json', "w") as write_file:
         json.dump(res, write_file)
 
+@bot.event
+async def on_reaction_remove(reaction, user):
+    message_id = reaction.message.id
+
+    if user.name in res[message_id]['marks'] and res[message_id]['marks'][user.name] == emojis[reaction.emoji]:
+        res[message_id]['marks'].pop(user.name, None)
+
+    with open('results.json', "w") as write_file:
+        json.dump(res, write_file)
+
 bot.run(token)
