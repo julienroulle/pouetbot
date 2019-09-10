@@ -1,10 +1,13 @@
 import os
 import json
 import re
+import pprint
+
+import numpy as np
+import pandas as pd
 
 import discord
 from discord.ext import commands
-
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -21,6 +24,7 @@ regex = re.compile(
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
 
 res = None
+channel = None
 
 emojis = {
     '1⃣': 1,
@@ -38,6 +42,13 @@ emojis = {
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
+
+    for guild in bot.guilds:
+        for chan in guild.channels:
+            if chan.name == 'pouetmusic':
+                global channel
+                channel = chan
+                break
 
     with open('results.json', 'r') as f:
         global res
@@ -61,24 +72,49 @@ async def submit_song(ctx, url: str):
     with open('results.json', "w") as write_file:
         json.dump(res, write_file)
 
-@bot.event
-async def on_reaction_add(reaction, user):
-    message_id = reaction.message.id
+@bot.command(name='result', help='Get results', pass_context=True)
+async def result(ctx, top: int=5):
+    clm = ['Url', 'User', 'Votes', 'Score']
+    df = pd.DataFrame(columns=clm)
 
-    if user.name in res[message_id]['marks'] or reaction.emoji not in emojis:
-        await reaction.message.remove_reaction(reaction.emoji, user)
+    for key in res.keys():
+        tmp = []
+        for notes in res[key]['marks']:
+            tmp.append(res[key]['marks'][notes])
+        
+        if tmp != []:
+            tmp = np.array(tmp)
+            df = df.append(pd.Series([res[key]['url'][12:], res[key]['submittedBy'], len(tmp), tmp.mean()], index=clm), ignore_index=True)
+
+    response = pprint.pformat(df.set_index('Url').sort_values('Score', ascending=False).head(top))
+    response = '```{}```'.format(response)
+    await ctx.send(response)
+
+@bot.event
+async def on_raw_reaction_add(payload):
+    message_id = payload.message_id
+    msg = await channel.history().find(lambda m: m.id == message_id)
+    user = bot.get_user(payload.user_id)
+    emoji = payload.emoji
+
+    if user.name in res[str(message_id)]['marks'] or str(emoji) not in emojis:
+        await msg.remove_reaction(emoji, user)
     else:
-        res[message_id]['marks'].update({user.name: emojis[reaction.emoji]})
+        res[str(message_id)]['marks'].update({user.name: emojis[str(emoji)]})
 
     with open('results.json', "w") as write_file:
         json.dump(res, write_file)
 
-@bot.event
-async def on_reaction_remove(reaction, user):
-    message_id = reaction.message.id
 
-    if user.name in res[message_id]['marks'] and res[message_id]['marks'][user.name] == emojis[reaction.emoji]:
-        res[message_id]['marks'].pop(user.name, None)
+@bot.event
+async def on_raw_reaction_remove(payload):
+    message_id = payload.message_id
+    msg = await channel.history().find(lambda m: m.id == message_id)
+    user = bot.get_user(payload.user_id)
+    emoji = payload.emoji
+
+    if user.name in res[str(message_id)]['marks'] and res[str(message_id)]['marks'][user.name] == emojis[str(emoji)]:
+        res[str(message_id)]['marks'].pop(user.name, None)
 
     with open('results.json', "w") as write_file:
         json.dump(res, write_file)
