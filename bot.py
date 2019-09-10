@@ -1,7 +1,6 @@
 import os
 import json
 import re
-import pprint
 
 import numpy as np
 import pandas as pd
@@ -86,7 +85,7 @@ async def result(ctx, top: int=5):
             tmp = np.array(tmp)
             df = df.append(pd.Series([res[key]['url'][12:], res[key]['submittedBy'], len(tmp), tmp.mean()], index=clm), ignore_index=True)
 
-    response = pprint.pformat(df.set_index('Url').sort_values('Score', ascending=False).head(top))
+    response = df.set_index('Url').sort_values('Score', ascending=False).head(top)
     response = '```{}```'.format(response)
     await ctx.send(response)
 
