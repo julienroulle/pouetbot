@@ -22,6 +22,19 @@ regex = re.compile(
 
 res = None
 
+emojis = {
+    '1⃣': 1,
+    '2⃣': 2,
+    '3⃣': 3,
+    '4⃣': 4,
+    '5⃣': 5,
+    '6⃣': 6,
+    '7⃣': 7,
+    '8⃣': 8,
+    '9⃣': 9,
+    '🔟': 10,
+}
+
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
@@ -45,6 +58,18 @@ async def submit_song(ctx, url: str):
         'submittedBy': str(ctx.message.author),
         'marks': {}
     }})
+    with open('results.json', "w") as write_file:
+        json.dump(res, write_file)
+
+@bot.event
+async def on_reaction_add(reaction, user):
+    message_id = reaction.message.id
+
+    if user.name in res[message_id]['marks'] or reaction.emoji not in emojis:
+        await reaction.message.remove_reaction(reaction.emoji, user)
+    else:
+        res[message_id]['marks'].update({user.name: emojis[reaction.emoji]})
+
     with open('results.json', "w") as write_file:
         json.dump(res, write_file)
 
