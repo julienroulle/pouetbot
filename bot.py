@@ -120,7 +120,6 @@ async def on_raw_reaction_add(payload):
     with open('results.json', "w") as write_file:
         json.dump(res, write_file)
 
-
 @bot.event
 async def on_raw_reaction_remove(payload):
     message_id = payload.message_id
@@ -130,6 +129,16 @@ async def on_raw_reaction_remove(payload):
 
     if user.name in res[str(message_id)]['marks'] and res[str(message_id)]['marks'][user.name] == emojis[str(emoji)]:
         res[str(message_id)]['marks'].pop(user.name, None)
+
+    with open('results.json', "w") as write_file:
+        json.dump(res, write_file)
+
+@bot.event
+async def on_raw_message_delete(payload):
+    message_id = payload.message_id
+
+    if str(message_id) in res:
+        res.pop(str(message_id), None)
 
     with open('results.json', "w") as write_file:
         json.dump(res, write_file)
