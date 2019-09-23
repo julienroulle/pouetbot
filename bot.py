@@ -9,8 +9,29 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
+import google_auth_oauthlib.flow
+import googleapiclient.discovery
+import googleapiclient.errors
+
+import urllib.parse
+
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
+
+os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+
+api_service_name = "youtube"
+api_version = "v3"
+client_secrets_file = "secret_file.json"
+
+scopes = ["https://www.googleapis.com/auth/youtube.force-ssl"]
+
+# Get credentials and create an API client
+flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
+    client_secrets_file, scopes)
+credentials = flow.run_console()
+youtube = googleapiclient.discovery.build(
+    api_service_name, api_version, credentials=credentials)
 
 bot = commands.Bot(command_prefix='!')
 
@@ -71,6 +92,25 @@ async def submit_song(ctx, url: str):
     with open('results.json', "w") as write_file:
         json.dump(res, write_file)
 
+    url_data = urllib.parse.urlparse(url)
+    query = urllib.parse.parse_qs(url_data.query)
+    video = query["v"][0]
+
+    global youtube
+    request = youtube.playlistItems().insert(
+        part="snippet",
+        body={
+          "snippet": {
+            "playlistId": "PL7KAEOjMgPlKYY0sSNMzCmsC1VdtoAbd5",
+            "resourceId": {
+              "videoId": f"{video}",
+              "kind": "youtube#video"
+            }
+          }
+        }
+    )
+    response = request.execute()
+
 @bot.command(name='result', help='Get results', pass_context=True)
 async def result(ctx, top: int=5):
     clm = ['Url', 'User', 'Votes', 'Score']
@@ -87,6 +127,11 @@ async def result(ctx, top: int=5):
 
     response = df.set_index('Url').sort_values('Score', ascending=False).head(top)
     response = '```{}```'.format(response)
+    await ctx.send(response)
+
+@bot.command(name='playlist', help='Get playlist link')
+async def result(ctx, top: int=5):
+    response = 'https://www.youtube.com/playlist?list=PL7KAEOjMgPlKYY0sSNMzCmsC1VdtoAbd5'
     await ctx.send(response)
 
 @bot.command(name='stats', help='Get stats', pass_context=True)
@@ -142,5 +187,6 @@ async def on_raw_message_delete(payload):
 
     with open('results.json', "w") as write_file:
         json.dump(res, write_file)
+
 
 bot.run(token)
