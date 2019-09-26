@@ -144,7 +144,7 @@ async def stats(ctx, top: int=7):
         df = df.append(tmp, ignore_index=True)
 
     nb_videos = df['submittedBy'].value_counts().sort_values(ascending=False).head(top)
-    nb_marks = df.count().head(top)
+    nb_marks = df.count().drop(['submittedBy']).sort_values(ascending=False).head(top)
     marks_given = df.mean().sort_values(ascending=False).head(top)
     marks_received = (df.groupby('submittedBy').sum().sum(axis=1) / df.groupby('submittedBy').count().sum(axis=1)).sort_values(ascending=False).head(top)
 
