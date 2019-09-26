@@ -130,12 +130,12 @@ async def result(ctx, top: int=5):
     await ctx.send(response)
 
 @bot.command(name='playlist', help='Get playlist link')
-async def result(ctx, top: int=5):
+async def playlist(ctx, top: int=5):
     response = 'https://www.youtube.com/playlist?list=PL7KAEOjMgPlKYY0sSNMzCmsC1VdtoAbd5'
     await ctx.send(response)
 
 @bot.command(name='stats', help='Get stats', pass_context=True)
-async def stats(ctx, top: int=5):
+async def stats(ctx, top: int=7):
     df = pd.DataFrame()
 
     for key in res.keys():
@@ -144,10 +144,11 @@ async def stats(ctx, top: int=5):
         df = df.append(tmp, ignore_index=True)
 
     nb_videos = df['submittedBy'].value_counts().sort_values(ascending=False).head(top)
+    nb_marks = df.count().head(top)
     marks_given = df.mean().sort_values(ascending=False).head(top)
     marks_received = (df.groupby('submittedBy').sum().sum(axis=1) / df.groupby('submittedBy').count().sum(axis=1)).sort_values(ascending=False).head(top)
 
-    response = '```Nombre de vidéos postées:\n{}\n\nMoyenne des notes données:\n{}\n\nMoyenne des notes reçues:\n{}```'.format(nb_videos, marks_given, marks_received)
+    response = '```Nombre de vidéos postées:\n{}\n\Nombre de notes données:\n{}\n\nMoyenne des notes données:\n{}\n\nMoyenne des notes reçues:\n{}```'.format(nb_videos, nb_marks, marks_given, marks_received)
     await ctx.send(response)
 
 @bot.event
