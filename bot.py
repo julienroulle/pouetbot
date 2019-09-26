@@ -148,7 +148,7 @@ async def stats(ctx, top: int=7):
     marks_given = df.mean().sort_values(ascending=False).head(top)
     marks_received = (df.groupby('submittedBy').sum().sum(axis=1) / df.groupby('submittedBy').count().sum(axis=1)).sort_values(ascending=False).head(top)
 
-    response = '```Nombre de vidéos postées:\n{}\n\Nombre de notes données:\n{}\n\nMoyenne des notes données:\n{}\n\nMoyenne des notes reçues:\n{}```'.format(nb_videos, nb_marks, marks_given, marks_received)
+    response = '```Nombre de vidéos postées:\n{}\n\nNombre de notes données:\n{}\n\nMoyenne des notes données:\n{}\n\nMoyenne des notes reçues:\n{}```'.format(nb_videos, nb_marks, marks_given, marks_received)
     await ctx.send(response)
 
 @bot.event
