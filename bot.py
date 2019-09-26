@@ -72,7 +72,9 @@ async def on_ready():
 
     with open('results.json', 'r') as f:
         global res
-        res = json.load(f)
+        f = f.read().replace('Un Mec En Stress', 'Zwentibold')
+        res = json.loads(f)
+        # res = json.load(f)
 
 @bot.command(name='submit', help='Submit a song to votes', pass_context=True)
 async def submit_song(ctx, url: str):
