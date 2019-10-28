@@ -96,7 +96,10 @@ async def submit_song(ctx, url: str):
 
     url_data = urllib.parse.urlparse(url)
     query = urllib.parse.parse_qs(url_data.query)
-    video = query["v"][0]
+    try:
+        video = query["v"][0]
+    except KeyError:
+        video = url.split('/')[-1]
 
     global youtube
     request = youtube.playlistItems().insert(
