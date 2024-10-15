@@ -5,8 +5,8 @@ import asyncio
 from discord.ext import commands
 from typing import List
 from dotenv import load_dotenv
-from models import PushUpLog, UserTotal, get_session, create_db_and_tables
-from sqlmodel import select
+from models import PushUpLog, UserTotal, engine, create_db_and_tables
+from sqlmodel import select, Session
 
 load_dotenv()
 token = os.getenv("DISCORD_TOKEN")
@@ -23,48 +23,48 @@ class PushUpOption(discord.ui.Button):
         view: PushUpView = self.view
         user_id = str(interaction.user.id)
 
-        session = next(get_session())
-        try:
-            # Log the push-ups
-            log = PushUpLog(user_id=user_id, pushups=self.x)
-            session.add(log)
+        with Session(engine) as session:
+            try:
+                # Log the push-ups
+                log = PushUpLog(user_id=user_id, pushups=self.x)
+                session.add(log)
 
-            # Update the user's total
-            user_total = session.exec(
-                select(UserTotal).where(UserTotal.user_id == user_id)
-            ).first()
-            if user_total:
-                user_total.total_pushups += self.x
-            else:
-                user_total = UserTotal(user_id=user_id, total_pushups=self.x)
-                session.add(user_total)
+                # Update the user's total
+                user_total = session.exec(
+                    select(UserTotal).where(UserTotal.user_id == user_id)
+                ).first()
+                if user_total:
+                    user_total.total_pushups += self.x
+                else:
+                    user_total = UserTotal(user_id=user_id, total_pushups=self.x)
+                    session.add(user_total)
 
-            session.commit()
+                session.commit()
 
-            # Get the updated leaderboard
-            leaderboard = session.exec(
-                select(UserTotal).order_by(UserTotal.total_pushups.desc())
-            ).all()
+                # Get the updated leaderboard
+                leaderboard = session.exec(
+                    select(UserTotal).order_by(UserTotal.total_pushups.desc())
+                ).all()
 
-            content = "Leaderboard:\n\n"
-            for rank, user in enumerate(leaderboard, start=1):
-                entry_user = await bot.fetch_user(int(user.user_id))
-                content += (
-                    f"{rank}. **{entry_user.name}**: {user.total_pushups} pushups\n"
-                )
-            # Get the last 5 entries
-            last_entries = session.exec(
-                select(PushUpLog).order_by(PushUpLog.timestamp.desc()).limit(5)
-            ).all()
+                content = "Leaderboard:\n\n"
+                for rank, user in enumerate(leaderboard, start=1):
+                    entry_user = await bot.fetch_user(int(user.user_id))
+                    content += (
+                        f"{rank}. **{entry_user.name}**: {user.total_pushups} pushups\n"
+                    )
+                # Get the last 5 entries
+                last_entries = session.exec(
+                    select(PushUpLog).order_by(PushUpLog.timestamp.desc()).limit(5)
+                ).all()
 
-            content += "\nLast 5 entries:\n"
-            for entry in last_entries:
-                entry_user = await bot.fetch_user(int(entry.user_id))
-                content += f"\n[{entry.timestamp.strftime('%I:%M %p')}] {entry_user.name} added {entry.pushups} pushups"
+                content += "\nLast 5 entries:\n"
+                for entry in last_entries:
+                    entry_user = await bot.fetch_user(int(entry.user_id))
+                    content += f"\n[{entry.timestamp.strftime('%I:%M %p')}] {entry_user.name} added {entry.pushups} pushups"
 
-            await interaction.response.edit_message(content=content, view=view)
-        finally:
-            session.close()
+                await interaction.response.edit_message(content=content, view=view)
+            finally:
+                session.close()
 
 
 # This is our actual board View
