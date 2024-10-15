@@ -1,7 +1,7 @@
 from __future__ import annotations
 import os
 import discord
-import asyncio
+import datetime
 from discord.ext import commands
 from typing import List
 from dotenv import load_dotenv
@@ -60,6 +60,7 @@ class PushUpOption(discord.ui.Button):
                 content += "\nLast 5 entries:\n"
                 for entry in last_entries:
                     entry_user = await bot.fetch_user(int(entry.user_id))
+                    entry.timestamp += datetime.timedelta(hours=4)
                     content += f"\n[{entry.timestamp.strftime('%I:%M %p')}] {entry_user.name} added {entry.pushups} pushups"
 
                 await interaction.response.edit_message(content=content, view=view)
