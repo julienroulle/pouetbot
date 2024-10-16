@@ -21,8 +21,13 @@ class UserTotal(SQLModel, table=True):
     total_pushups: int = Field(default=0)
 
 
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine(DATABASE_URL, pool_size=10, max_overflow=20)
 
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
+
+
+def get_session():
+    with Session(engine) as session:
+        yield session
