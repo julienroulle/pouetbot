@@ -99,7 +99,7 @@ class PushUpView(discord.ui.View):
 
     def __init__(self):
         super().__init__(timeout=None)
-        self.push_up_options = [1, 5, 10, 20]
+        self.push_up_options = [5, 10, 15, 20, 25]
 
         for x in self.push_up_options:
             self.add_item(PushUpOption(x))
