@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from models import PushUpLog, UserTotal, get_session, create_db_and_tables
 from sqlmodel import select
 from sqlalchemy import func
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 
 load_dotenv()
 token = os.getenv("DISCORD_TOKEN")
@@ -66,8 +66,8 @@ class PushUpOption(discord.ui.Button):
 
             # Get the total pushups for each user for the current day
             today = datetime.now().date()
-            today_start = datetime.combine(today, time.min)
-            today_end = datetime.combine(today, time.max)
+            today_start = datetime.combine(today, time.min) - timedelta(hours=1)
+            today_end = datetime.combine(today, time.max) - timedelta(hours=1)
 
             daily_totals = session.exec(
                 select(
