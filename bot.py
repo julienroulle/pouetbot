@@ -90,6 +90,7 @@ class PushUpOption(discord.ui.Button):
 
             await interaction.response.edit_message(content=content, view=view)
         except Exception as e:
+            session.rollback()
             print(e)
 
 
