@@ -40,8 +40,6 @@ class PushUpOption(discord.ui.Button):
                 user_total = UserTotal(user_id=user_id, total_pushups=self.x)
                 session.add(user_total)
 
-            session.commit()
-
             # Get the updated leaderboard
             leaderboard = session.exec(
                 select(UserTotal).order_by(UserTotal.total_pushups.desc())
@@ -88,6 +86,7 @@ class PushUpOption(discord.ui.Button):
             if not daily_totals:
                 content += "\nNo pushups recorded today yet!"
 
+            session.commit()
             await interaction.response.edit_message(content=content, view=view)
         except Exception as e:
             session.rollback()
