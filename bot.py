@@ -14,6 +14,15 @@ import logging
 load_dotenv()
 token = os.getenv("DISCORD_TOKEN")
 
+map_user_id_to_name = {
+    "190104710060048384": "kendaryth",
+    "272849004927123466": "macmaseb",
+    "440181001742712852": "pionks",
+    "384452097048969217": "spirine",
+    "268368259953328129": "zboobas",
+    "444421186907275265": "oboulland",
+}
+
 
 class PushUpOption(discord.ui.Button):
     def __init__(self, x: int):
@@ -39,7 +48,9 @@ class PushUpOption(discord.ui.Button):
                 if user_total:
                     user_total.total_pushups += self.x
                 else:
-                    user_total = UserTotal(user_id=user_id, total_pushups=self.x)
+                    user_total = UserTotal(
+                        user_id=user_id, total_pushups=self.x
+                    )
                     session.add(user_total)
 
                 # Get the updated leaderboard
@@ -49,15 +60,16 @@ class PushUpOption(discord.ui.Button):
 
                 content = "Leaderboard:\n\n"
                 for rank, user in enumerate(leaderboard, start=1):
-                    entry_user = await bot.fetch_user(int(user.user_id))
-                    content += (
-                        f"{rank}. **{entry_user.name}**: {user.total_pushups} pushups\n"
-                    )
+                    content += f"{rank}. **{map_user_id_to_name[user.user_id]}**: {user.total_pushups} pushups\n"
 
                 # Get the total pushups for each user for the current day
                 today = datetime.now(UTC).date() + timedelta(hours=1)
-                today_start = datetime.combine(today, time.min) - timedelta(hours=1)
-                today_end = datetime.combine(today, time.max) - timedelta(hours=1)
+                today_start = datetime.combine(today, time.min) - timedelta(
+                    hours=1
+                )
+                today_end = datetime.combine(today, time.max) - timedelta(
+                    hours=1
+                )
 
                 daily_totals = session.exec(
                     select(
@@ -71,15 +83,16 @@ class PushUpOption(discord.ui.Button):
 
                 content += "\nToday's Pushup Totals:\n"
                 for user_id, total_pushups in daily_totals:
-                    user = await bot.fetch_user(int(user_id))
-                    content += f"\n{user.name}: {total_pushups} pushups"
+                    content += f"\n{map_user_id_to_name[user_id]}: {total_pushups} pushups"
 
                 # If there are no entries for today
                 if not daily_totals:
                     content += "\nNo pushups recorded today yet!"
 
                 session.commit()
-                await interaction.response.edit_message(content=content, view=view)
+                await interaction.response.edit_message(
+                    content=content, view=view
+                )
             except Exception as e:
                 logging.error(e)
                 session.rollback()
