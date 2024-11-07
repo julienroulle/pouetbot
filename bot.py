@@ -63,7 +63,7 @@ class PushUpOption(discord.ui.Button):
                     content += f"{rank}. **{map_user_id_to_name[user.user_id]}**: {user.total_pushups} pushups\n"
 
                 # Get the total pushups for each user for the current day
-                today = datetime.now(UTC).date() + timedelta(hours=1)
+                today = (datetime.now(UTC) + timedelta(hours=1)).date()
                 today_start = datetime.combine(today, time.min) - timedelta(
                     hours=1
                 )
