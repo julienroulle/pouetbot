@@ -6,8 +6,37 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.13.3",
+    "asyncpg>=0.30.0",
     "discord-py>=2.4.0",
+    "matplotlib>=3.9.2",
+    "pandas>=2.2.3",
     "psycopg2-binary>=2.9.9",
     "python-dotenv>=1.0.1",
+    "sqlalchemy[asyncio]>=2.0.35",
     "sqlmodel>=0.0.22",
 ]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29.5",
+    "ruff>=0.7.2",
+]
+
+[tool.ruff]
+src = ["app"]
+line-length = 79
+show-fixes = true
+unsafe-fixes = true
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = []
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint.pycodestyle]
+max-doc-length = 72
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

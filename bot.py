@@ -4,7 +4,13 @@ import discord
 from discord.ext import commands
 from typing import List
 from dotenv import load_dotenv
-from models import PushUpLog, UserTotal, create_db_and_tables, engine
+from models import (
+    PushUpLog,
+    UserTotal,
+    create_db_and_tables,
+    engine,
+    get_session,
+)
 from sqlmodel import Session, select
 from sqlalchemy import func
 from datetime import datetime, time, timedelta, UTC
@@ -35,16 +41,17 @@ class PushUpOption(discord.ui.Button):
         view: PushUpView = self.view
         user_id = str(interaction.user.id)
 
-        with Session(engine) as session:
+        async with get_session() as session:
             try:
                 # Log the push-ups
                 log = PushUpLog(user_id=user_id, pushups=self.x)
                 session.add(log)
 
                 # Update the user's total
-                user_total = session.exec(
+                user_total = await session.execute(
                     select(UserTotal).where(UserTotal.user_id == user_id)
-                ).first()
+                )
+                user_total = user_total.first()[0]
                 if user_total:
                     user_total.total_pushups += self.x
                 else:
@@ -54,12 +61,13 @@ class PushUpOption(discord.ui.Button):
                     session.add(user_total)
 
                 # Get the updated leaderboard
-                leaderboard = session.exec(
+                leaderboard = await session.execute(
                     select(UserTotal).order_by(UserTotal.total_pushups.desc())
-                ).all()
+                )
 
                 content = "Leaderboard:\n\n"
                 for rank, user in enumerate(leaderboard, start=1):
+                    user = user[0]
                     content += f"{rank}. **{map_user_id_to_name[user.user_id]}**: {user.total_pushups} pushups\n"
 
                 # Get the total pushups for each user for the current day
@@ -71,7 +79,7 @@ class PushUpOption(discord.ui.Button):
                     hours=1
                 )
 
-                daily_totals = session.exec(
+                daily_totals = await session.execute(
                     select(
                         PushUpLog.user_id,
                         func.sum(PushUpLog.pushups).label("total_pushups"),
@@ -79,7 +87,7 @@ class PushUpOption(discord.ui.Button):
                     .where(PushUpLog.timestamp.between(today_start, today_end))
                     .group_by(PushUpLog.user_id)
                     .order_by(func.sum(PushUpLog.pushups).desc())
-                ).all()
+                )
 
                 content += "\nToday's Pushup Totals:\n"
                 for user_id, total_pushups in daily_totals:
@@ -89,13 +97,13 @@ class PushUpOption(discord.ui.Button):
                 if not daily_totals:
                     content += "\nNo pushups recorded today yet!"
 
-                session.commit()
+                await session.commit()
                 await interaction.response.edit_message(
                     content=content, view=view
                 )
-            except Exception as e:
-                logging.error(e)
-                session.rollback()
+            except Exception:
+                logging.exception()
+                await session.rollback()
 
 
 # This is our actual board View
@@ -122,6 +130,7 @@ class PouetBot(commands.Bot):
     async def on_ready(self):
         print(f"Logged in as {self.user} (ID: {self.user.id})")
         print("------")
+        await create_db_and_tables()
 
 
 bot = PouetBot()
@@ -131,7 +140,5 @@ bot = PouetBot()
 async def pushup(ctx: commands.Context):
     await ctx.send("Push up challenge", view=PushUpView())
 
-
-create_db_and_tables()
 
 bot.run(token)
