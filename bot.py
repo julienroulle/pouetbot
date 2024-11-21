@@ -101,8 +101,8 @@ class PushUpOption(discord.ui.Button):
                 await interaction.response.edit_message(
                     content=content, view=view
                 )
-            except Exception:
-                logging.exception()
+            except Exception as e:
+                logging.exception(e)
                 await session.rollback()
 
 
