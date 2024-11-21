@@ -97,10 +97,10 @@ class PushUpOption(discord.ui.Button):
                 if not daily_totals:
                     content += "\nNo pushups recorded today yet!"
 
-                await session.commit()
                 await interaction.response.edit_message(
                     content=content, view=view
                 )
+                await session.commit()
             except Exception as e:
                 logging.exception(e)
                 await session.rollback()
