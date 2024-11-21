@@ -1,4 +1,5 @@
 from __future__ import annotations
+import asyncio
 import os
 import discord
 from discord.ext import commands
@@ -40,6 +41,7 @@ class PushUpOption(discord.ui.Button):
         assert self.view is not None
         view: PushUpView = self.view
         user_id = str(interaction.user.id)
+        message_id = interaction.message.id
 
         async with get_session() as session:
             try:
@@ -97,8 +99,10 @@ class PushUpOption(discord.ui.Button):
                 if not daily_totals:
                     content += "\nNo pushups recorded today yet!"
 
-                await interaction.response.edit_message(
-                    content=content, view=view
+                await interaction.response.defer()
+                await asyncio.sleep(0.5)
+                await interaction.followup.edit_message(
+                    message_id=message_id, content=content, view=view
                 )
                 await session.commit()
             except Exception as e:
